@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CONFIG = {
   room: 'assets/room.glb',
   links: {
-    tiktok: 'https://www.tiktok.com/@USERNAME', // Replace USERNAME when the account is ready.
+    pumpfun: 'https://pump.fun/coin', //
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
@@ -239,14 +239,14 @@ function openExperience(kind) {
 }
 
 function openDesktop() {
-  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpTikTok"><span>♪</span>TikTok</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
-  document.querySelector('#xpTikTok').addEventListener('click', openTikTok);
+  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPumpfun"><span>♪</span>Pumpfun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+  document.querySelector('#xpPumpfun').addEventListener('click', openPumpfun);
   document.querySelector('#xpTwitter').addEventListener('click', () => window.open(CONFIG.links.twitter, '_blank', 'noopener'));
   document.querySelector('#xpContract').addEventListener('click', copyContract);
 }
 
-function openTikTok() {
-  window.open(CONFIG.links.tiktok, '_blank', 'noopener,noreferrer');
+function openPumpfun() {
+  window.open(CONFIG.links.pumpfun, '_blank', 'noopener,noreferrer');
 }
 
 async function copyContract() {
