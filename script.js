@@ -147,7 +147,7 @@ function enterRoom() {
   if (!modelReady) return;
   started = true;
   portal.style.opacity = '0'; portal.style.visibility = 'hidden'; hud.classList.remove('hidden');
-  music.volume = 0.45; music.play().catch(() => updateSound(false));
+  music.volume = 0.8; music.play().catch(() => updateSound(false));
   renderer.domElement.requestPointerLock();
 }
 
