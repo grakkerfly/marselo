@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07030f">
+  <title>Marselo Room</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="loading"><div class="loader"></div><span>LOADING ROOM</span></div>
+  <section id="portal">
+    <div class="portal-orbit"></div>
+    <div class="portal-copy"><span class="eyebrow">YOU FOUND HIS ROOM</span><h1>MARSELO</h1><p>Enter the room. Find the truth.</p><button id="enterButton">ENTER</button><small>Headphones recommended</small></div>
+  </section>
+  <div id="hud" class="hidden">
+    <div id="crosshair"></div>
+    <div id="controls"><b>WASD</b> move <i></i><b>MOUSE</b> look <i></i><b>E</b> interact <i></i><b>ESC</b> back</div>
+    <button id="soundButton" aria-label="Toggle music">SOUND ON</button>
+  </div>
+  <div id="prompt"><span>E</span><p>INTERACT</p></div>
+  <div id="toast"></div>
+  <div id="modal" aria-hidden="true">
+    <div id="modalBackdrop"></div>
+    <section id="modalPanel">
+      <button id="closeModal" aria-label="Close">×</button>
+      <div id="modalContent"></div>
+    </section>
+  </div>
+  <audio id="music" src="assets/music.mp3" loop preload="auto"></audio>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
