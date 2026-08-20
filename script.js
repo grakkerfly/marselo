@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CONFIG = {
   room: 'assets/room.glb',
   links: {
-    pumpFun: '', // Adult-managed external trading URL, intentionally disabled by default.
+    tiktok: 'https://www.tiktok.com/@USERNAME', // Replace USERNAME when the account is ready.
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
@@ -239,15 +239,14 @@ function openExperience(kind) {
 }
 
 function openDesktop() {
-  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPump"><span>↗</span>Pump.fun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
-  document.querySelector('#xpPump').addEventListener('click', openPumpBrowser);
+  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpTikTok"><span>♪</span>TikTok</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+  document.querySelector('#xpTikTok').addEventListener('click', openTikTok);
   document.querySelector('#xpTwitter').addEventListener('click', () => window.open(CONFIG.links.twitter, '_blank', 'noopener'));
   document.querySelector('#xpContract').addEventListener('click', copyContract);
 }
 
-function openPumpBrowser() {
-  modalContent.innerHTML = `<div class="browser"><div class="browser-bar"><button class="browser-back">← Desktop</button><div class="address">${CONFIG.links.pumpFun || 'External trading link unavailable'}</div></div><div class="browser-notice"><div><h3>External trading site</h3><p>This shortcut is unavailable in this version.</p></div></div></div>`;
-  document.querySelector('.browser-back').addEventListener('click', openDesktop);
+function openTikTok() {
+  window.open(CONFIG.links.tiktok, '_blank', 'noopener,noreferrer');
 }
 
 async function copyContract() {
