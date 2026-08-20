@@ -9,7 +9,7 @@ const CONFIG = {
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
   contract: 'contract address',
-  spawn: new THREE.Vector3(0, 1.65, 0),
+  spawn: new THREE.Vector3(-5, 2, -14),
   moveSpeed: 3.2,
   interactionDistance: 3.2,
   playerRadius: 0.32,
@@ -56,7 +56,7 @@ const keys = new Set();
 const colliders = [];
 const interactables = [];
 const roomBounds = new THREE.Box3();
-let room, activeTarget = null, started = false, locked = false, yaw = 0, pitch = 0, focusTween = null, modelReady = false;
+let room, activeTarget = null, started = false, locked = false, yaw = Math.PI, pitch = 0, focusTween = null, modelReady = false;
 
 const normalize = value => value.toLowerCase().replace(/[._\-\s]/g, '');
 const matches = (name, aliases) => aliases.some(alias => normalize(name).includes(normalize(alias)));
@@ -128,11 +128,17 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 
-function canOccupy(position) {
+function collisionCount(position) {
   const radius = CONFIG.playerRadius;
-  if (position.x < roomBounds.min.x + radius || position.x > roomBounds.max.x - radius || position.z < roomBounds.min.z + radius || position.z > roomBounds.max.z - radius || position.y < roomBounds.min.y + radius || position.y > roomBounds.max.y - CONFIG.headClearance) return false;
+  if (position.x < roomBounds.min.x + radius || position.x > roomBounds.max.x - radius || position.z < roomBounds.min.z + radius || position.z > roomBounds.max.z - radius || position.y < roomBounds.min.y + radius || position.y > roomBounds.max.y - CONFIG.headClearance) return Infinity;
   const player = new THREE.Box3(new THREE.Vector3(position.x-radius,position.y-1.45,position.z-radius),new THREE.Vector3(position.x+radius,position.y+.15,position.z+radius));
-  return !colliders.some(box => box.intersectsBox(player));
+  return colliders.reduce((total, box) => total + Number(box.intersectsBox(player)), 0);
+}
+
+function canOccupy(position, origin = camera.position) {
+  const current = collisionCount(origin);
+  const next = collisionCount(position);
+  return next === 0 || (current > 0 && next < current);
 }
 
 function movePlayer(delta) {
@@ -140,9 +146,9 @@ function movePlayer(delta) {
   const input = new THREE.Vector3((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0), (keys.has('Space')?1:0)-(keys.has('ShiftLeft')?1:0), (keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0));
   if (!input.lengthSq()) return;
   input.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw).multiplyScalar(CONFIG.moveSpeed * delta);
-  const nextX = camera.position.clone(); nextX.x += input.x; if (canOccupy(nextX)) camera.position.x = nextX.x;
-  const nextZ = camera.position.clone(); nextZ.z += input.z; if (canOccupy(nextZ)) camera.position.z = nextZ.z;
-  const nextY = camera.position.clone(); nextY.y += input.y; if (canOccupy(nextY)) camera.position.y = nextY.y;
+  const nextX = camera.position.clone(); nextX.x += input.x; if (canOccupy(nextX, camera.position)) camera.position.x = nextX.x;
+  const nextZ = camera.position.clone(); nextZ.z += input.z; if (canOccupy(nextZ, camera.position)) camera.position.z = nextZ.z;
+  const nextY = camera.position.clone(); nextY.y += input.y; if (canOccupy(nextY, camera.position)) camera.position.y = nextY.y;
 }
 
 function findTarget() {
