@@ -4,11 +4,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CONFIG = {
   room: 'assets/room.glb',
   links: {
-    pumpfun: 'https://pump.fun/coin',
+    pumpfun: 'https://pump.fun/coin/ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
-  contract: 'contract address',
+  contract: 'ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
   spawn: new THREE.Vector3(-5, 5, -14),
   moveSpeed: 10,
   interactionDistance: 10,
