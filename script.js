@@ -11,7 +11,7 @@ const CONFIG = {
   contract: 'contract address',
   spawn: new THREE.Vector3(-5, 5, -14),
   moveSpeed: 10,
-  interactionDistance: 8,
+  interactionDistance: 10,
   playerRadius: 0.6,
   headClearance: 0.2,
   flightBounds: {
@@ -88,18 +88,40 @@ function loadRoom(paths = [CONFIG.room, 'assets/ROOM.glb']) {
   scene.add(room);
   room.updateMatrixWorld(true);
   roomBounds.setFromObject(room);
-  [
-    ['monitor', 'Monitor 1', [-5.01, 8.38, 9.09]],
-    ['monitor', 'Monitor 2', [-10.63, 8.38, 9.10]],
-    ['tv', 'Tv', [-8.98, 14.68, 10.03]],
-    ['marselo', 'Skeleton_Marselo', [1.69, 6, -2.46]]
-  ].forEach(([kind, name, position]) => {
+  const addObjectTarget = (kind, name, fallbackPosition, fallbackSize) => {
     const object = room.getObjectByName(name);
-    if (!object) return;
-    const box = new THREE.Box3().setFromObject(object);
-    const center = new THREE.Vector3(...position);
-    interactables.push({ object, kind, center, box });
+    const center = new THREE.Vector3(...fallbackPosition);
+    const half = new THREE.Vector3(...fallbackSize).multiplyScalar(0.5);
+    const box = object
+      ? new THREE.Box3().setFromObject(object).expandByScalar(1.5)
+      : new THREE.Box3(center.clone().sub(half), center.clone().add(half));
+    if (object) box.getCenter(center);
+    interactables.push({ object: object || new THREE.Object3D(), kind, center, box });
+  };
+
+  addObjectTarget('monitor', 'Monitor 1', [-5.01, 8.38, 9.09], [6, 5, 4]);
+  addObjectTarget('monitor', 'Monitor 2', [-10.63, 8.38, 9.10], [6, 5, 4]);
+  addObjectTarget('tv', 'Tv', [-8.98, 14.68, 10.03], [8, 5, 2]);
+
+  const marseloBox = new THREE.Box3();
+  const marseloMeshes = [];
+  room.traverse(object => {
+    if (object.isMesh && /^Marselo_/i.test(object.name)) {
+      marseloMeshes.push(object);
+      marseloBox.expandByObject(object);
+    }
   });
+  if (marseloMeshes.length) {
+    marseloBox.expandByScalar(1.5);
+    interactables.push({
+      object: marseloMeshes[0],
+      kind: 'marselo',
+      center: marseloBox.getCenter(new THREE.Vector3()),
+      box: marseloBox
+    });
+  } else {
+    addObjectTarget('marselo', 'Skeleton_Marselo', [1.69, 6, -2.46], [6, 7, 6]);
+  }
   if (!roomBounds.containsPoint(camera.position)) {
     roomBounds.getCenter(camera.position);
     camera.position.y = Math.min(roomBounds.max.y - 1, roomBounds.min.y + 1.65);
@@ -207,7 +229,7 @@ function openExperience(kind) {
   if (kind === 'monitor') openDesktop();
   if (kind === 'tv') {
     const images = Array.from({length:20},(_,i)=>`<img src="assets/memes/${i+1}.jpg" alt="Marselo meme ${i+1}" loading="lazy">`).join('');
-    const videos = Array.from({length:4},(_,i)=>`<video src="assets/vids/vid${i+1}.mp4" controls preload="metadata"></video>`).join('');
+    const videos = Array.from({length:3},(_,i)=>`<video src="assets/vids/${i+1}.mp4" controls playsinline preload="metadata"></video>`).join('');
     modalContent.innerHTML = `<div class="gallery-head"><h2>MEME ARCHIVE</h2><p>Recovered Marselo transmissions.</p></div><div class="gallery-grid">${videos}${images}</div>`;
   }
   if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The protagonist of the imagined Mamarre Studios movie saga.</p></header><div class="lore-body"><div class="lore-copy"><strong>APPEARANCE</strong><br>Marselo is a white Kino 5 lottery ball with long, flexible arms and legs connected directly to his head. He has blue eyes, expressive hands and shoe-shaped feet.<br><br><strong>PERSONALITY</strong><br>Marselo is a generous god who helps anyone who asks, but his anger can shake the world. Beneath his quiet nature, he carries the mystery of his father, Marselo Escobar.<br><br><strong>HISTORY</strong><br>Born in 1990, Marselo begins a huge saga with his twin brother Esteban and his ally Killer Bean. Their search crosses paths with Capuccino, Gonsalo, Richard, Maurisio, Gustabo and The King. Across sequels, revivals, betrayals and multiverse events, Marselo loses power, trains for hundreds of chapters, becomes an omnipotent god, briefly turns evil, returns to his senses and eventually seeks a peaceful life with Marsela. His story continues whenever the universe needs its faithful white ball.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
@@ -217,10 +239,9 @@ function openExperience(kind) {
 }
 
 function openDesktop() {
-  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPump"><span>↗</span>Pump.fun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpWiki"><span>W</span>Marselo Wiki</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPump"><span>↗</span>Pump.fun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
   document.querySelector('#xpPump').addEventListener('click', openPumpBrowser);
   document.querySelector('#xpTwitter').addEventListener('click', () => window.open(CONFIG.links.twitter, '_blank', 'noopener'));
-  document.querySelector('#xpWiki').addEventListener('click', () => window.open(CONFIG.links.wiki, '_blank', 'noopener'));
   document.querySelector('#xpContract').addEventListener('click', copyContract);
 }
 
