@@ -14,6 +14,10 @@ const CONFIG = {
   interactionDistance: 8,
   playerRadius: 0.6,
   headClearance: 0.2,
+  flightBounds: {
+    min: new THREE.Vector3(-19, 1, -33),
+    max: new THREE.Vector3(14, 18, 18)
+  },
   names: {
     monitor: ['monitor', 'screen', 'komputer'],
     tv: ['tv', 'television'],
@@ -39,7 +43,7 @@ const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.06, 1
 camera.position.copy(CONFIG.spawn);
 camera.rotation.order = 'YXZ';
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio * 0.65, 1.3));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -85,16 +89,15 @@ function loadRoom(paths = [CONFIG.room, 'assets/ROOM.glb']) {
   room.updateMatrixWorld(true);
   roomBounds.setFromObject(room);
   [
-    ['monitor', 'Monitor 1'],
-    ['monitor', 'Monitor 2'],
-    ['tv', 'Tv'],
-    ['marselo', 'Skeleton_Marselo']
-  ].forEach(([kind, name]) => {
+    ['monitor', 'Monitor 1', [-5.01, 8.38, 9.09]],
+    ['monitor', 'Monitor 2', [-10.63, 8.38, 9.10]],
+    ['tv', 'Tv', [-8.98, 14.68, 10.03]],
+    ['marselo', 'Skeleton_Marselo', [1.69, 6, -2.46]]
+  ].forEach(([kind, name, position]) => {
     const object = room.getObjectByName(name);
     if (!object) return;
     const box = new THREE.Box3().setFromObject(object);
-    const center = box.getCenter(new THREE.Vector3());
-    if (kind === 'marselo') center.set(1.69, 6, -2.46);
+    const center = new THREE.Vector3(...position);
     interactables.push({ object, kind, center, box });
   });
   if (!roomBounds.containsPoint(camera.position)) {
@@ -116,7 +119,7 @@ function loadRoom(paths = [CONFIG.room, 'assets/ROOM.glb']) {
 document.querySelector('#enterButton').disabled = true;
 document.querySelector('#enterButton').textContent = 'LOADING ROOM';
 loadRoom();
-setTimeout(() => { loading.style.opacity = '0'; setTimeout(() => loading.remove(), 700); }, 1500);
+setTimeout(() => { loading.style.opacity = '0'; setTimeout(() => loading.remove(), 250); }, 350);
 
 function enterRoom() {
   if (!modelReady) return;
@@ -148,17 +151,11 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 
-function collisionCount(position) {
-  const radius = CONFIG.playerRadius;
-  if (position.x < roomBounds.min.x + radius || position.x > roomBounds.max.x - radius || position.z < roomBounds.min.z + radius || position.z > roomBounds.max.z - radius || position.y < roomBounds.min.y + radius || position.y > roomBounds.max.y - CONFIG.headClearance) return Infinity;
-  const player = new THREE.Box3(new THREE.Vector3(position.x-radius,position.y-3.8,position.z-radius),new THREE.Vector3(position.x+radius,position.y+.2,position.z+radius));
-  return colliders.reduce((total, box) => total + Number(box.intersectsBox(player)), 0);
-}
-
-function canOccupy(position, origin = camera.position) {
-  const current = collisionCount(origin);
-  const next = collisionCount(position);
-  return next === 0 || (current > 0 && next < current);
+function canOccupy(position) {
+  const { min, max } = CONFIG.flightBounds;
+  return position.x >= min.x && position.x <= max.x &&
+    position.y >= min.y && position.y <= max.y &&
+    position.z >= min.z && position.z <= max.z;
 }
 
 function movePlayer(delta) {
@@ -213,7 +210,7 @@ function openExperience(kind) {
     const videos = Array.from({length:4},(_,i)=>`<video src="assets/vids/vid${i+1}.mp4" controls preload="metadata"></video>`).join('');
     modalContent.innerHTML = `<div class="gallery-head"><h2>MEME ARCHIVE</h2><p>Recovered Marselo transmissions.</p></div><div class="gallery-grid">${videos}${images}</div>`;
   }
-  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The room remembers everything.</p></header><div class="lore-body"><div class="lore-copy">Marselo did not arrive from Mars. <strong>Mars arrived from Marselo.</strong><br><br>Some say he has been sitting in this room since before the first block. Watching charts. Collecting memes. Waiting for the signal. Nobody knows what happens when he finally stands up.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
+  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The protagonist of the imagined Mamarre Studios movie saga.</p></header><div class="lore-body"><div class="lore-copy"><strong>APPEARANCE</strong><br>Marselo is a white Kino 5 lottery ball with long, flexible arms and legs connected directly to his head. He has blue eyes, expressive hands and shoe-shaped feet.<br><br><strong>PERSONALITY</strong><br>Marselo is a generous god who helps anyone who asks, but his anger can shake the world. Beneath his quiet nature, he carries the mystery of his father, Marselo Escobar.<br><br><strong>HISTORY</strong><br>Born in 1990, Marselo begins a huge saga with his twin brother Esteban and his ally Killer Bean. Their search crosses paths with Capuccino, Gonsalo, Richard, Maurisio, Gustabo and The King. Across sequels, revivals, betrayals and multiverse events, Marselo loses power, trains for hundreds of chapters, becomes an omnipotent god, briefly turns evil, returns to his senses and eventually seeks a peaceful life with Marsela. His story continues whenever the universe needs its faithful white ball.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
   modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); prompt.classList.remove('show');
   document.querySelector('#modalMusic')?.addEventListener('click', () => { updateSound(); openExperience('marselo'); });
   document.querySelector('#copyContract')?.addEventListener('click', async () => { await navigator.clipboard.writeText(CONFIG.contract); showToast('CONTRACT COPIED'); });
