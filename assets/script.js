@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CONFIG = {
   room: 'assets/room.glb',
   links: {
-    pumpFun: 'https://pump.fun/coin/',
+    pumpFun: 'https://pump.fun/',
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
