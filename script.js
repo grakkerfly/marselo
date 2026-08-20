@@ -3,9 +3,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const CONFIG = {
   room: 'assets/room.glb',
-  pumpFun: 'https://pump.fun/',
-  twitter: 'https://x.com/',
-  contract: 'PASTE_CONTRACT_ADDRESS_HERE',
+  links: {
+    pumpFun: '', // Adult-managed external trading URL, intentionally disabled by default.
+    twitter: 'https://x.com/marselomoon',
+    wiki: 'https://herofanon.fandom.com/wiki/Marselo'
+  },
+  contract: 'contract address',
   spawn: new THREE.Vector3(0, 1.65, 0),
   moveSpeed: 3.2,
   interactionDistance: 3.2,
@@ -53,12 +56,14 @@ const keys = new Set();
 const colliders = [];
 const interactables = [];
 const roomBounds = new THREE.Box3();
-let room, activeTarget = null, started = false, locked = false, yaw = 0, pitch = 0, focusTween = null;
+let room, activeTarget = null, started = false, locked = false, yaw = 0, pitch = 0, focusTween = null, modelReady = false;
 
 const normalize = value => value.toLowerCase().replace(/[._\-\s]/g, '');
 const matches = (name, aliases) => aliases.some(alias => normalize(name).includes(normalize(alias)));
 
-new GLTFLoader().load(CONFIG.room, gltf => {
+function loadRoom(paths = [CONFIG.room, 'assets/ROOM.glb']) {
+  const path = paths.shift();
+  new GLTFLoader().load(path, gltf => {
   room = gltf.scene;
   room.traverse(object => {
     if (!object.isMesh) return;
@@ -76,15 +81,25 @@ new GLTFLoader().load(CONFIG.room, gltf => {
     roomBounds.getCenter(camera.position);
     camera.position.y = Math.min(roomBounds.max.y - 1, roomBounds.min.y + 1.65);
   }
-  loading.style.opacity = '0';
-  setTimeout(() => loading.remove(), 500);
+  modelReady = true;
+  document.querySelector('#enterButton').disabled = false;
+  document.querySelector('#enterButton').textContent = 'ENTER';
 }, undefined, error => {
-  loading.innerHTML = '<span>ROOM.GLB COULD NOT BE LOADED</span>';
+  if (paths.length) return loadRoom(paths);
+  document.querySelector('#enterButton').disabled = true;
+  document.querySelector('#enterButton').textContent = 'ROOM.GLB NOT FOUND';
+  document.querySelector('.portal-copy small').textContent = location.protocol === 'file:' ? 'OPEN WITH A LOCAL SERVER — DO NOT DOUBLE-CLICK INDEX.HTML' : 'CHECK assets/room.glb';
   console.error(error);
 });
+}
+
+document.querySelector('#enterButton').disabled = true;
+document.querySelector('#enterButton').textContent = 'LOADING ROOM';
+loadRoom();
+setTimeout(() => { loading.style.opacity = '0'; setTimeout(() => loading.remove(), 700); }, 1500);
 
 function enterRoom() {
-  if (!room) return;
+  if (!modelReady) return;
   started = true;
   portal.style.opacity = '0'; portal.style.visibility = 'hidden'; hud.classList.remove('hidden');
   music.volume = 0.45; music.play().catch(() => updateSound(false));
@@ -167,16 +182,34 @@ function updateFocus(now) {
 }
 
 function openExperience(kind) {
-  if (kind === 'monitor') modalContent.innerHTML = `<div class="browser"><div class="browser-bar"><div class="dots"><i></i><i></i><i></i></div><div class="address">${CONFIG.pumpFun}</div></div><iframe src="${CONFIG.pumpFun}" title="Marselo on Pump.fun"></iframe><noscript class="browser-fallback"><a href="${CONFIG.pumpFun}" target="_blank" rel="noopener">OPEN PUMP.FUN</a></noscript></div>`;
+  if (kind === 'monitor') openDesktop();
   if (kind === 'tv') {
     const images = Array.from({length:20},(_,i)=>`<img src="assets/memes/${i+1}.jpg" alt="Marselo meme ${i+1}" loading="lazy">`).join('');
     const videos = Array.from({length:4},(_,i)=>`<video src="assets/vids/vid${i+1}.mp4" controls preload="metadata"></video>`).join('');
     modalContent.innerHTML = `<div class="gallery-head"><h2>MEME ARCHIVE</h2><p>Recovered Marselo transmissions.</p></div><div class="gallery-grid">${videos}${images}</div>`;
   }
-  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The room remembers everything.</p></header><div class="lore-body"><div class="lore-copy">Marselo did not arrive from Mars. <strong>Mars arrived from Marselo.</strong><br><br>Some say he has been sitting in this room since before the first block. Watching charts. Collecting memes. Waiting for the signal. Nobody knows what happens when he finally stands up.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.pumpFun}" target="_blank" rel="noopener">PUMP.FUN ↗</a><a href="${CONFIG.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
+  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The room remembers everything.</p></header><div class="lore-body"><div class="lore-copy">Marselo did not arrive from Mars. <strong>Mars arrived from Marselo.</strong><br><br>Some say he has been sitting in this room since before the first block. Watching charts. Collecting memes. Waiting for the signal. Nobody knows what happens when he finally stands up.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
   modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); prompt.classList.remove('show');
   document.querySelector('#modalMusic')?.addEventListener('click', () => { updateSound(); openExperience('marselo'); });
   document.querySelector('#copyContract')?.addEventListener('click', async () => { await navigator.clipboard.writeText(CONFIG.contract); showToast('CONTRACT COPIED'); });
+}
+
+function openDesktop() {
+  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPump"><span>↗</span>Pump.fun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpWiki"><span>W</span>Marselo Wiki</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+  document.querySelector('#xpPump').addEventListener('click', openPumpBrowser);
+  document.querySelector('#xpTwitter').addEventListener('click', () => window.open(CONFIG.links.twitter, '_blank', 'noopener'));
+  document.querySelector('#xpWiki').addEventListener('click', () => window.open(CONFIG.links.wiki, '_blank', 'noopener'));
+  document.querySelector('#xpContract').addEventListener('click', copyContract);
+}
+
+function openPumpBrowser() {
+  modalContent.innerHTML = `<div class="browser"><div class="browser-bar"><button class="browser-back">← Desktop</button><div class="address">${CONFIG.links.pumpFun || 'External trading link unavailable'}</div></div><div class="browser-notice"><div><h3>External trading site</h3><p>This shortcut is unavailable in this version.</p></div></div></div>`;
+  document.querySelector('.browser-back').addEventListener('click', openDesktop);
+}
+
+async function copyContract() {
+  await navigator.clipboard.writeText(CONFIG.contract);
+  showToast('CONTRACT COPIED');
 }
 
 function closeModal() { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); modalContent.innerHTML=''; activeTarget=null; if(started) renderer.domElement.requestPointerLock(); }
