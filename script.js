@@ -9,10 +9,10 @@ const CONFIG = {
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
   contract: 'contract address',
-  spawn: new THREE.Vector3(-5, 2, -14),
-  moveSpeed: 3.2,
-  interactionDistance: 3.2,
-  playerRadius: 0.32,
+  spawn: new THREE.Vector3(-5, 5, -14),
+  moveSpeed: 10,
+  interactionDistance: 8,
+  playerRadius: 0.6,
   headClearance: 0.2,
   names: {
     monitor: ['monitor', 'screen', 'komputer'],
@@ -48,8 +48,17 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 game.append(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0x796cff, 0x17101e, 1.2));
-const fill = new THREE.PointLight(0x754cff, 35, 18, 2); fill.position.set(0, 3, 0); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xddeeff, 0x101840, 2.4));
+[
+  [-15, 7, -28, 0x4d7dff],
+  [10, 7, -28, 0xffffff],
+  [-15, 7, 13, 0xffffff],
+  [10, 7, 13, 0x4d7dff]
+].forEach(([x, y, z, color]) => {
+  const light = new THREE.PointLight(color, 115, 36, 1.7);
+  light.position.set(x, y, z);
+  scene.add(light);
+});
 
 const clock = new THREE.Clock();
 const keys = new Set();
@@ -70,13 +79,24 @@ function loadRoom(paths = [CONFIG.room, 'assets/ROOM.glb']) {
     object.castShadow = true;
     object.receiveShadow = true;
     const kind = Object.entries(CONFIG.names).find(([, aliases]) => matches(object.name, aliases))?.[0];
-    if (kind) interactables.push({ object, kind, center: new THREE.Vector3(), box: new THREE.Box3() });
-    else colliders.push(new THREE.Box3().setFromObject(object));
+    if (!kind) colliders.push(new THREE.Box3().setFromObject(object));
   });
   scene.add(room);
   room.updateMatrixWorld(true);
   roomBounds.setFromObject(room);
-  interactables.forEach(item => { item.box.setFromObject(item.object); item.box.getCenter(item.center); });
+  [
+    ['monitor', 'Monitor 1'],
+    ['monitor', 'Monitor 2'],
+    ['tv', 'Tv'],
+    ['marselo', 'Skeleton_Marselo']
+  ].forEach(([kind, name]) => {
+    const object = room.getObjectByName(name);
+    if (!object) return;
+    const box = new THREE.Box3().setFromObject(object);
+    const center = box.getCenter(new THREE.Vector3());
+    if (kind === 'marselo') center.set(1.69, 6, -2.46);
+    interactables.push({ object, kind, center, box });
+  });
   if (!roomBounds.containsPoint(camera.position)) {
     roomBounds.getCenter(camera.position);
     camera.position.y = Math.min(roomBounds.max.y - 1, roomBounds.min.y + 1.65);
@@ -131,7 +151,7 @@ document.addEventListener('keyup', event => keys.delete(event.code));
 function collisionCount(position) {
   const radius = CONFIG.playerRadius;
   if (position.x < roomBounds.min.x + radius || position.x > roomBounds.max.x - radius || position.z < roomBounds.min.z + radius || position.z > roomBounds.max.z - radius || position.y < roomBounds.min.y + radius || position.y > roomBounds.max.y - CONFIG.headClearance) return Infinity;
-  const player = new THREE.Box3(new THREE.Vector3(position.x-radius,position.y-1.45,position.z-radius),new THREE.Vector3(position.x+radius,position.y+.15,position.z+radius));
+  const player = new THREE.Box3(new THREE.Vector3(position.x-radius,position.y-3.8,position.z-radius),new THREE.Vector3(position.x+radius,position.y+.2,position.z+radius));
   return colliders.reduce((total, box) => total + Number(box.intersectsBox(player)), 0);
 }
 
@@ -154,8 +174,7 @@ function movePlayer(delta) {
 function findTarget() {
   let nearest = null, distance = Infinity;
   interactables.forEach(item => {
-    const closest = item.box.clampPoint(camera.position, new THREE.Vector3());
-    const current = closest.distanceTo(camera.position);
+    const current = item.center.distanceTo(camera.position);
     if (current < CONFIG.interactionDistance && current < distance) { nearest = item; distance = current; }
   });
   activeTarget = nearest;
