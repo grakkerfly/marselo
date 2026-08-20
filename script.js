@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CONFIG = {
   room: 'assets/room.glb',
   links: {
-    pumpFun: 'https://pump.fun/',
+    pumpFun: '', // Adult-managed external trading URL, intentionally disabled by default.
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo'
   },
@@ -245,7 +245,10 @@ function openDesktop() {
   document.querySelector('#xpContract').addEventListener('click', copyContract);
 }
 
-
+function openPumpBrowser() {
+  modalContent.innerHTML = `<div class="browser"><div class="browser-bar"><button class="browser-back">← Desktop</button><div class="address">${CONFIG.links.pumpFun || 'External trading link unavailable'}</div></div><div class="browser-notice"><div><h3>External trading site</h3><p>This shortcut is unavailable in this version.</p></div></div></div>`;
+  document.querySelector('.browser-back').addEventListener('click', openDesktop);
+}
 
 async function copyContract() {
   await navigator.clipboard.writeText(CONFIG.contract);
