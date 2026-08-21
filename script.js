@@ -227,7 +227,7 @@ function openDesktop() {
 
 function openGallery(category) {
   const isVideos = category === 'videos';
-  galleryItems = Array.from({length:isVideos ? 3 : 20}, (_, i) => ({
+  galleryItems = Array.from({length:isVideos ? 8 : 20}, (_, i) => ({
     type: isVideos ? 'video' : 'image',
     src: isVideos ? `assets/vids/${i+1}.mp4` : `assets/memes/${i+1}.jpg`,
     alt: `Marselo ${isVideos ? 'video' : 'meme'} ${i+1}`
@@ -239,6 +239,7 @@ function openGallery(category) {
 }
 
 function openMediaViewer(index) {
+  stopViewerMedia();
   galleryIndex = (index + galleryItems.length) % galleryItems.length;
   let viewer = document.querySelector('#mediaViewer');
   if (!viewer) {
@@ -258,7 +259,20 @@ function openMediaViewer(index) {
 }
 
 function changeMedia(direction) { openMediaViewer(galleryIndex + direction); }
-function closeMediaViewer() { document.querySelector('#mediaViewer')?.classList.remove('open'); }
+function stopViewerMedia() {
+  const video = document.querySelector('#mediaViewer .media-stage video');
+  if (!video) return;
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+}
+function closeMediaViewer() {
+  const viewer = document.querySelector('#mediaViewer');
+  if (!viewer) return;
+  stopViewerMedia();
+  viewer.querySelector('.media-stage').innerHTML = '';
+  viewer.classList.remove('open');
+}
 
 function openPumpfun() {
   window.open(CONFIG.links.pumpfun, '_blank', 'noopener,noreferrer');
