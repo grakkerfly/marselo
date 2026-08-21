@@ -7,7 +7,7 @@ const CONFIG = {
     pumpfun: 'https://pump.fun/coin/ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
     twitter: 'https://x.com/marselomoon',
     wiki: 'https://herofanon.fandom.com/wiki/Marselo',
-    telegram: 'https://t.me/addstickers/marseloescobarjr'
+    telegram: 'https://t.me/addstickers/marseloescobarjr_by_fStikBot'
   },
   contract: 'ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
   spawn: new THREE.Vector3(-5, 5, -14),
