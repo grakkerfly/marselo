@@ -6,11 +6,12 @@ const CONFIG = {
   links: {
     pumpfun: 'https://pump.fun/coin/ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
     twitter: 'https://x.com/marselomoon',
-    wiki: 'https://herofanon.fandom.com/wiki/Marselo'
+    wiki: 'https://herofanon.fandom.com/wiki/Marselo',
+    telegram: 'https://t.me/addstickers/marseloescobarjr'
   },
   contract: 'ZExy7krMikBNWHhs9YLpmvuk6CBz4JQn42TK5E2pump',
   spawn: new THREE.Vector3(-5, 5, -14),
-  moveSpeed: 10,
+  moveSpeed: 12,
   interactionDistance: 10,
   playerRadius: 0.6,
   headClearance: 0.2,
@@ -69,7 +70,8 @@ const keys = new Set();
 const colliders = [];
 const interactables = [];
 const roomBounds = new THREE.Box3();
-let room, activeTarget = null, started = false, locked = false, yaw = Math.PI, pitch = 0, focusTween = null, modelReady = false;
+let room, activeTarget = null, started = false, locked = false, yaw = Math.PI, pitch = 0, modelReady = false;
+let galleryItems = [], galleryIndex = 0;
 
 const normalize = value => value.toLowerCase().replace(/[._\-\s]/g, '');
 const matches = (name, aliases) => aliases.some(alias => normalize(name).includes(normalize(alias)));
@@ -161,7 +163,7 @@ soundButton.addEventListener('click', event => { event.stopPropagation(); update
 renderer.domElement.addEventListener('click', () => { if (started && !modal.classList.contains('open')) renderer.domElement.requestPointerLock(); });
 document.addEventListener('pointerlockchange', () => locked = document.pointerLockElement === renderer.domElement);
 document.addEventListener('mousemove', event => {
-  if (!locked || focusTween) return;
+  if (!locked) return;
   yaw -= event.movementX * 0.0022;
   pitch = THREE.MathUtils.clamp(pitch - event.movementY * 0.0022, -Math.PI * .48, Math.PI * .48);
 });
@@ -181,7 +183,7 @@ function canOccupy(position) {
 }
 
 function movePlayer(delta) {
-  if (!locked || focusTween || modal.classList.contains('open')) return;
+  if (!locked || modal.classList.contains('open')) return;
   const input = new THREE.Vector3((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0), (keys.has('Space')?1:0)-(keys.has('ShiftLeft')?1:0), (keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0));
   if (!input.lengthSq()) return;
   input.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw).multiplyScalar(CONFIG.moveSpeed * delta);
@@ -203,47 +205,60 @@ function findTarget() {
 
 function interact(target) {
   document.exitPointerLock();
-  const startPosition = camera.position.clone();
-  const startQuaternion = camera.quaternion.clone();
-  const size = target.box.getSize(new THREE.Vector3());
-  const targetCenter = target.center.clone();
-  const direction = startPosition.clone().sub(targetCenter); direction.y = 0;
-  if (direction.lengthSq() < .01) direction.set(0,0,1); direction.normalize();
-  const distance = Math.max(1.15, Math.max(size.x,size.y,size.z) * 1.15);
-  let targetPosition = targetCenter.clone().addScaledVector(direction, distance);
-  targetPosition.y = THREE.MathUtils.clamp(targetCenter.y, roomBounds.min.y + 1, roomBounds.max.y - .4);
-  if (!canOccupy(targetPosition)) targetPosition = startPosition;
-  const dummy = new THREE.Object3D(); dummy.position.copy(targetPosition); dummy.lookAt(targetCenter);
-  focusTween = { start: performance.now(), duration: 650, startPosition, targetPosition, startQuaternion, targetQuaternion: dummy.quaternion.clone(), target };
-}
-
-function updateFocus(now) {
-  if (!focusTween) return;
-  const t = Math.min(1, (now-focusTween.start)/focusTween.duration); const eased = 1-Math.pow(1-t,3);
-  camera.position.lerpVectors(focusTween.startPosition, focusTween.targetPosition, eased);
-  camera.quaternion.slerpQuaternions(focusTween.startQuaternion, focusTween.targetQuaternion, eased);
-  if (t === 1) { const target = focusTween.target; focusTween = null; setTimeout(() => openExperience(target.kind), 120); }
+  openExperience(target.kind);
 }
 
 function openExperience(kind) {
   if (kind === 'monitor') openDesktop();
-  if (kind === 'tv') {
-    const images = Array.from({length:20},(_,i)=>`<img src="assets/memes/${i+1}.jpg" alt="Marselo meme ${i+1}" loading="lazy">`).join('');
-    const videos = Array.from({length:3},(_,i)=>`<video src="assets/vids/${i+1}.mp4" controls playsinline preload="metadata"></video>`).join('');
-    modalContent.innerHTML = `<div class="gallery-head"><h2>MEME ARCHIVE</h2><p>Recovered Marselo transmissions.</p></div><div class="gallery-grid">${videos}${images}</div>`;
-  }
-  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The protagonist of the imagined Mamarre Studios movie saga.</p></header><div class="lore-body"><div class="lore-copy"><strong>APPEARANCE</strong><br>Marselo is a white Kino 5 lottery ball with long, flexible arms and legs connected directly to his head. He has blue eyes, expressive hands and shoe-shaped feet.<br><br><strong>PERSONALITY</strong><br>Marselo is a generous god who helps anyone who asks, but his anger can shake the world. Beneath his quiet nature, he carries the mystery of his father, Marselo Escobar.<br><br><strong>HISTORY</strong><br>Born in 1990, Marselo begins a huge saga with his twin brother Esteban and his ally Killer Bean. Their search crosses paths with Capuccino, Gonsalo, Richard, Maurisio, Gustabo and The King. Across sequels, revivals, betrayals and multiverse events, Marselo loses power, trains for hundreds of chapters, becomes an omnipotent god, briefly turns evil, returns to his senses and eventually seeks a peaceful life with Marsela. His story continues whenever the universe needs its faithful white ball.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
+  if (kind === 'tv') openGallery('videos');
+  if (kind === 'marselo') modalContent.innerHTML = `<article class="lore"><header class="lore-head"><h2>WHO IS MARSELO?</h2><p>The protagonist of the imagined Mamarre Studios movie saga.</p></header><div class="lore-body"><div class="lore-copy"><strong>APPEARANCE</strong><br>Marselo is a white Kino 5 lottery ball with long, flexible arms and legs connected directly to his head. He has blue eyes, expressive hands and shoe-shaped feet.<br><br><strong>PERSONALITY</strong><br>Marselo is a generous god who helps anyone who asks, but his anger can shake the world. Beneath his quiet nature, he carries the mystery of his father, Marselo Escobar.<br><br><strong>HISTORY</strong><br>Born in 1990, Marselo begins a huge saga with his twin brother Esteban and his ally Killer Bean. Their search crosses paths with Capuccino, Gonsalo, Richard, Maurisio, Gustabo and The King. Across sequels, revivals, betrayals and multiverse events, Marselo loses power, trains for hundreds of chapters, becomes an omnipotent god, briefly turns evil, returns to his senses and eventually seeks a peaceful life with Marsela. His story continues whenever the universe needs its faithful white ball.</div><nav class="links"><button id="modalMusic">${music.paused?'ENABLE':'DISABLE'} MUSIC</button><a href="${CONFIG.links.twitter}" target="_blank" rel="noopener">X / TWITTER ↗</a><a href="${CONFIG.links.wiki}" target="_blank" rel="noopener">WIKI ↗</a><a href="${CONFIG.links.telegram}" target="_blank" rel="noopener">TELEGRAM STICKER PACK ↗</a><button id="copyContract">COPY CONTRACT</button></nav></div></article>`;
   modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); prompt.classList.remove('show');
   document.querySelector('#modalMusic')?.addEventListener('click', () => { updateSound(); openExperience('marselo'); });
   document.querySelector('#copyContract')?.addEventListener('click', async () => { await navigator.clipboard.writeText(CONFIG.contract); showToast('CONTRACT COPIED'); });
 }
 
 function openDesktop() {
-  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPumpfun"><span>📈</span>Pumpfun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
+  modalContent.innerHTML = `<div class="xp"><div class="xp-desktop"><button class="xp-icon" id="xpPumpfun"><span>📈</span>Pumpfun</button><button class="xp-icon" id="xpTwitter"><span>𝕏</span>Twitter</button><button class="xp-icon" id="xpTelegram"><span>✈</span>Sticker Pack</button><button class="xp-icon" id="xpContract"><span>📄</span>Copy Contract</button></div><div class="xp-taskbar"><button class="xp-start">start</button><div class="xp-title">Marselo's Computer</div><div class="xp-clock">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div></div>`;
   document.querySelector('#xpPumpfun').addEventListener('click', openPumpfun);
   document.querySelector('#xpTwitter').addEventListener('click', () => window.open(CONFIG.links.twitter, '_blank', 'noopener'));
+  document.querySelector('#xpTelegram').addEventListener('click', () => window.open(CONFIG.links.telegram, '_blank', 'noopener'));
   document.querySelector('#xpContract').addEventListener('click', copyContract);
 }
+
+function openGallery(category) {
+  const isVideos = category === 'videos';
+  galleryItems = Array.from({length:isVideos ? 3 : 20}, (_, i) => ({
+    type: isVideos ? 'video' : 'image',
+    src: isVideos ? `assets/vids/${i+1}.mp4` : `assets/memes/${i+1}.jpg`,
+    alt: `Marselo ${isVideos ? 'video' : 'meme'} ${i+1}`
+  }));
+  const cards = galleryItems.map((item, i) => `<button class="gallery-item" data-index="${i}" aria-label="Open ${item.alt}">${item.type === 'video' ? `<video src="${item.src}" muted playsinline preload="metadata"></video>` : `<img src="${item.src}" alt="${item.alt}" loading="lazy">`}</button>`).join('');
+  modalContent.innerHTML = `<div class="gallery-head"><h2>MEME ARCHIVE</h2><p>Recovered Marselo transmissions.</p></div><div class="gallery-tabs"><button class="gallery-tab ${isVideos?'active':''}" data-category="videos">VIDEOS</button><button class="gallery-tab ${!isVideos?'active':''}" data-category="memes">MEMES</button></div><div class="gallery-grid">${cards}</div>`;
+  document.querySelectorAll('.gallery-tab').forEach(tab => tab.addEventListener('click', () => openGallery(tab.dataset.category)));
+  document.querySelectorAll('.gallery-item').forEach(item => item.addEventListener('click', () => openMediaViewer(Number(item.dataset.index))));
+}
+
+function openMediaViewer(index) {
+  galleryIndex = (index + galleryItems.length) % galleryItems.length;
+  let viewer = document.querySelector('#mediaViewer');
+  if (!viewer) {
+    viewer = document.createElement('div');
+    viewer.id = 'mediaViewer'; viewer.className = 'media-viewer';
+    viewer.innerHTML = `<button class="media-close" aria-label="Close viewer">×</button><button class="media-arrow media-prev" aria-label="Previous media">‹</button><div class="media-stage"></div><button class="media-arrow media-next" aria-label="Next media">›</button><div class="media-count"></div>`;
+    document.body.append(viewer);
+    viewer.querySelector('.media-close').addEventListener('click', closeMediaViewer);
+    viewer.addEventListener('click', event => { if (event.target === viewer) closeMediaViewer(); });
+    viewer.querySelector('.media-prev').addEventListener('click', () => changeMedia(-1));
+    viewer.querySelector('.media-next').addEventListener('click', () => changeMedia(1));
+  }
+  const item = galleryItems[galleryIndex];
+  viewer.querySelector('.media-stage').innerHTML = item.type === 'video' ? `<video src="${item.src}" controls autoplay playsinline></video>` : `<img src="${item.src}" alt="${item.alt}">`;
+  viewer.querySelector('.media-count').textContent = `${galleryIndex + 1} / ${galleryItems.length}`;
+  viewer.classList.add('open');
+}
+
+function changeMedia(direction) { openMediaViewer(galleryIndex + direction); }
+function closeMediaViewer() { document.querySelector('#mediaViewer')?.classList.remove('open'); }
 
 function openPumpfun() {
   window.open(CONFIG.links.pumpfun, '_blank', 'noopener,noreferrer');
@@ -254,7 +269,7 @@ async function copyContract() {
   showToast('CONTRACT COPIED');
 }
 
-function closeModal() { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); modalContent.innerHTML=''; activeTarget=null; if(started) renderer.domElement.requestPointerLock(); }
+function closeModal() { closeMediaViewer(); modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); modalContent.innerHTML=''; activeTarget=null; if(started) renderer.domElement.requestPointerLock(); }
 document.querySelector('#closeModal').addEventListener('click', closeModal);
 document.querySelector('#modalBackdrop').addEventListener('click', closeModal);
 function showToast(message){toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800)}
@@ -262,9 +277,15 @@ function showToast(message){toast.textContent=message;toast.classList.add('show'
 function animate(now) {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), .05);
-  if (!focusTween) camera.rotation.set(pitch,yaw,0);
-  movePlayer(delta); updateFocus(now); if (room && started && !focusTween) findTarget();
+  camera.rotation.set(pitch,yaw,0);
+  movePlayer(delta); if (room && started) findTarget();
   renderer.render(scene,camera);
 }
 requestAnimationFrame(animate);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+document.addEventListener('keydown', event => {
+  if (!document.querySelector('#mediaViewer')?.classList.contains('open')) return;
+  if (event.code === 'ArrowLeft') changeMedia(-1);
+  if (event.code === 'ArrowRight') changeMedia(1);
+  if (event.code === 'Escape') { event.stopImmediatePropagation(); closeMediaViewer(); }
+}, true);
